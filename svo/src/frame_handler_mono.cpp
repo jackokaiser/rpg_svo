@@ -211,13 +211,6 @@ FrameHandlerBase::UpdateResult FrameHandlerMono::processFrame()
     }
   }
   myfileCameraObs << nFeatures << endl;
-  for(Features::iterator it=kf1->fts_.begin(); it!=kf1->fts_.end(); ++it) {
-    if((*it)->point != NULL) {
-      Vector3d xyz_new_f = new_frame_->T_f_w_ * (*it)->point->pos_;
-      xyz_new_f.normalize();
-      myfileCameraObs << (*it)->point->id_ << " " << xyz_new_f[0] << " " <<  xyz_new_f[1] << " " << xyz_new_f[2] << std::endl;
-    }
-  }
 
   // new keyframe selected
   for(Features::iterator it=new_frame_->fts_.begin(); it!=new_frame_->fts_.end(); ++it)
@@ -257,6 +250,14 @@ FrameHandlerBase::UpdateResult FrameHandlerMono::processFrame()
 
   // add keyframe to map
   map_.addKeyframe(new_frame_);
+
+  for(Features::iterator it=kf1->fts_.begin(); it!=kf1->fts_.end(); ++it) {
+    if((*it)->point != NULL) {
+      Vector3d xyz_new_f = new_frame_->T_f_w_ * (*it)->point->pos_;
+      xyz_new_f.normalize();
+      myfileCameraObs << (*it)->point->id_ << " " << xyz_new_f[0] << " " <<  xyz_new_f[1] << " " << xyz_new_f[2] << std::endl;
+    }
+  }
 
   return RESULT_IS_KEYFRAME;
 }
