@@ -22,6 +22,10 @@
 #include <svo/frame_handler_base.h>
 #include <svo/reprojector.h>
 #include <svo/initialization.h>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+
 
 namespace svo {
 
@@ -30,10 +34,10 @@ class FrameHandlerMono : public FrameHandlerBase
 {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  
+
   FrameHandlerMono(vk::AbstractCamera* cam);
   virtual ~FrameHandlerMono();
-
+  std::ofstream myfileCameraObs;
   /// Provide an image.
   void addImage(const cv::Mat& img, double timestamp);
 

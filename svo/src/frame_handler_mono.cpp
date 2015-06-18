@@ -24,6 +24,10 @@
 #include <svo/sparse_img_align.h>
 #include <vikit/performance_monitor.h>
 #include <svo/depth_filter.h>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+
 #ifdef USE_BUNDLE_ADJUSTMENT
 #include <svo/bundle_adjustment.h>
 #endif
@@ -37,6 +41,7 @@ FrameHandlerMono::FrameHandlerMono(vk::AbstractCamera* cam) :
   depth_filter_(NULL)
 {
   initialize();
+  myfileCameraObs.open("cameraMeasurements");
 }
 
 void FrameHandlerMono::initialize()
@@ -52,6 +57,7 @@ void FrameHandlerMono::initialize()
 
 FrameHandlerMono::~FrameHandlerMono()
 {
+  myfileCameraObs.close();
   delete depth_filter_;
 }
 
@@ -194,10 +200,19 @@ FrameHandlerBase::UpdateResult FrameHandlerMono::processFrame()
   new_frame_->setKeyframe();
   SVO_DEBUG_STREAM("New keyframe selected.");
 
+  myfileCameraObs << fixed << new_frame_->timestamp_ << " " ;
+  int nFeatures = 0;
+  for(Features::iterator it=new_frame_->fts_.begin(); it!=new_frame_->fts_.end(); ++it)
+    if((*it)->point != NULL) {
+      nFeatures++;
+    }
+  myfileCameraObs << nFeatures << endl;
   // new keyframe selected
   for(Features::iterator it=new_frame_->fts_.begin(); it!=new_frame_->fts_.end(); ++it)
-    if((*it)->point != NULL)
+    if((*it)->point != NULL) {
       (*it)->point->addFrameRef(*it);
+      myfileCameraObs << (*it)->point->id_ << " " << (*it)->f[0] << " " <<  (*it)->f[1] << " " << (*it)->f[2] << std::endl;
+    }
   map_.point_candidates_.addCandidatePointToFrame(new_frame_);
 
   // optional bundle adjustment
