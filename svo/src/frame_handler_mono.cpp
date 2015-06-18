@@ -200,18 +200,29 @@ FrameHandlerBase::UpdateResult FrameHandlerMono::processFrame()
   new_frame_->setKeyframe();
   SVO_DEBUG_STREAM("New keyframe selected.");
 
+  // for all point present in frame 1
+  // compute the direction vector with respect to current frame
   myfileCameraObs << fixed << new_frame_->timestamp_ << " " ;
   int nFeatures = 0;
-  for(Features::iterator it=new_frame_->fts_.begin(); it!=new_frame_->fts_.end(); ++it)
+  FramePtr kf1 = map_.keyframes_.front();
+  for(Features::iterator it=kf1->fts_.begin(); it!=kf1->fts_.end(); ++it) {
     if((*it)->point != NULL) {
       nFeatures++;
     }
+  }
   myfileCameraObs << nFeatures << endl;
+  for(Features::iterator it=kf1->fts_.begin(); it!=kf1->fts_.end(); ++it) {
+    if((*it)->point != NULL) {
+      Vector3d xyz_new_f = new_frame_->T_f_w_ * (*it)->point->pos_;
+      xyz_new_f.normalize();
+      myfileCameraObs << (*it)->point->id_ << " " << xyz_new_f[0] << " " <<  xyz_new_f[1] << " " << xyz_new_f[2] << std::endl;
+    }
+  }
+
   // new keyframe selected
   for(Features::iterator it=new_frame_->fts_.begin(); it!=new_frame_->fts_.end(); ++it)
     if((*it)->point != NULL) {
       (*it)->point->addFrameRef(*it);
-      myfileCameraObs << (*it)->point->id_ << " " << (*it)->f[0] << " " <<  (*it)->f[1] << " " << (*it)->f[2] << std::endl;
     }
   map_.point_candidates_.addCandidatePointToFrame(new_frame_);
 
