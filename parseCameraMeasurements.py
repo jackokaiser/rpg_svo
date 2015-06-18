@@ -66,7 +66,7 @@ listId = allConsecutive(nConsecutive, frameNb)
 print repr(len(listId)) + ' ' + repr(l_timestamps[frameNb])
 
 for curFrameIdx, curFrame in enumerate(l_bearings[frameNb:frameNb+nConsecutive]):
-    thisLine = repr(l_timestamps[curFrameIdx])
+    thisLine = repr(l_timestamps[frameNb + curFrameIdx])
     for ft in listId:
         thisLine += ',' + repr(curFrame[ft][0]) + ',' + repr(curFrame[ft][1]) + ',' + repr(curFrame[ft][2])
     print thisLine
