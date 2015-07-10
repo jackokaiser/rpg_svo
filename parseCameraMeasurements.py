@@ -57,10 +57,8 @@ def findBestConsecutive(frameNb, minFeatures):
         nConsecutive += 1
     return nConsecutive - 1
 
-# print findBestConsecutive(0, 50)
-
-nConsecutive = 37
-frameNb = 0
+nConsecutive = 1000
+frameNb = 297
 listId = allConsecutive(nConsecutive, frameNb)
 
 print repr(len(listId)) + ' ' + repr(l_timestamps[frameNb])
