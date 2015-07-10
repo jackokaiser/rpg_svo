@@ -92,37 +92,22 @@ void FrameHandlerMono::addImage(const cv::Mat& img, const double timestamp)
   new_frame_.reset();
 
   if (map_.keyframes_.size() > 0) {
-    // for all points in map
-    // compute the direction vector with respect to current frame
+
     myfileCameraObs << fixed << last_frame_->timestamp_ << " " ;
-    vector<int> projectIds;
-    vector<Vector3d> projectPts;
-    static int counter=0;
-    // for all kf
-    for(auto kf : map_.keyframes_)
-    {
-      if (kf == nullptr) {
-        continue;
+    int nFeatures = 0;
+    for(Features::iterator it=last_frame_->fts_.begin(); it!=last_frame_->fts_.end(); ++it)
+      if( ((*it) != nullptr) && ((*it)->point != nullptr)) {
+        nFeatures++;
       }
-      // for all keypoints
-      for(auto keypoint : kf->fts_)
-      {
-        if(keypoint->point == nullptr)
-          continue;
-
-        if(find(projectIds.begin(), projectIds.end(), keypoint->point->id_) == projectIds.end()) {
-          projectIds.push_back(keypoint->point->id_);
-          projectPts.push_back(keypoint->point->pos_);
-        }
+    myfileCameraObs << nFeatures << endl;
+    for(Features::iterator it=last_frame_->fts_.begin(); it!=last_frame_->fts_.end(); ++it) {
+      if((*it)->point != nullptr) {
+        Vector3d xyz_new_f = last_frame_->T_f_w_ * (*it)->point->pos_;
+        xyz_new_f.normalize();
+        myfileCameraObs << (*it)->point->id_ << " " << xyz_new_f[0] << " " <<  xyz_new_f[1] << " " << xyz_new_f[2] << std::endl;
       }
     }
-    myfileCameraObs << projectIds.size() << endl;
 
-    for (unsigned int i=0; i<projectIds.size(); i++ ) {
-      Vector3d xyz_new_f = last_frame_->T_f_w_ * projectPts[i];
-      xyz_new_f.normalize();
-      myfileCameraObs << projectIds[i] << " " << xyz_new_f[0] << " " <<  xyz_new_f[1] << " " << xyz_new_f[2] << std::endl;
-    }
   }
 
 
