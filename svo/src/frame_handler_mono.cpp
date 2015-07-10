@@ -200,17 +200,30 @@ FrameHandlerBase::UpdateResult FrameHandlerMono::processFrame()
   new_frame_->setKeyframe();
   SVO_DEBUG_STREAM("New keyframe selected.");
 
-  // for all point present in frame 1
+  // for all points in map
   // compute the direction vector with respect to current frame
   myfileCameraObs << fixed << new_frame_->timestamp_ << " " ;
   int nFeatures = 0;
-  FramePtr kf1 = map_.keyframes_.front();
-  for(Features::iterator it=kf1->fts_.begin(); it!=kf1->fts_.end(); ++it) {
-    if((*it)->point != NULL) {
-      nFeatures++;
+  vector<int> projectIds;
+  vector<Vector3d> projectPts;
+  static int counter=0;
+  // for all kf
+  for(auto kf : map_.keyframes_)
+  {
+    // for all keypoints
+    for(auto keypoint : kf->fts_)
+    {
+      if(keypoint->point == nullptr)
+        continue;
+
+      if(find(projectIds.begin(), projectIds.end(), keypoint->point->id_) == projectIds.end()) {
+        projectIds.push_back(keypoint->point->id_);
+        projectPts.push_back(keypoint->point->pos_);
+      }
     }
   }
-  myfileCameraObs << nFeatures << endl;
+
+  myfileCameraObs << projectIds.size() << endl;
 
   // new keyframe selected
   for(Features::iterator it=new_frame_->fts_.begin(); it!=new_frame_->fts_.end(); ++it)
@@ -251,12 +264,10 @@ FrameHandlerBase::UpdateResult FrameHandlerMono::processFrame()
   // add keyframe to map
   map_.addKeyframe(new_frame_);
 
-  for(Features::iterator it=kf1->fts_.begin(); it!=kf1->fts_.end(); ++it) {
-    if((*it)->point != NULL) {
-      Vector3d xyz_new_f = new_frame_->T_f_w_ * (*it)->point->pos_;
-      xyz_new_f.normalize();
-      myfileCameraObs << (*it)->point->id_ << " " << xyz_new_f[0] << " " <<  xyz_new_f[1] << " " << xyz_new_f[2] << std::endl;
-    }
+  for (unsigned int i=0; i<projectIds.size(); i++ ) {
+    Vector3d xyz_new_f = new_frame_->T_f_w_ * projectPts[i];
+    xyz_new_f.normalize();
+    myfileCameraObs << projectIds[i] << " " << xyz_new_f[0] << " " <<  xyz_new_f[1] << " " << xyz_new_f[2] << std::endl;
   }
 
   return RESULT_IS_KEYFRAME;
