@@ -91,8 +91,45 @@ void FrameHandlerMono::addImage(const cv::Mat& img, const double timestamp)
   last_frame_ = new_frame_;
   new_frame_.reset();
 
+  if (map_.keyframes_.size() > 0) {
+    // for all points in map
+    // compute the direction vector with respect to current frame
+    myfileCameraObs << fixed << last_frame_->timestamp_ << " " ;
+    vector<int> projectIds;
+    vector<Vector3d> projectPts;
+    static int counter=0;
+    // for all kf
+    for(auto kf : map_.keyframes_)
+    {
+      if (kf == nullptr) {
+        continue;
+      }
+      // for all keypoints
+      for(auto keypoint : kf->fts_)
+      {
+        if(keypoint->point == nullptr)
+          continue;
+
+        if(find(projectIds.begin(), projectIds.end(), keypoint->point->id_) == projectIds.end()) {
+          projectIds.push_back(keypoint->point->id_);
+          projectPts.push_back(keypoint->point->pos_);
+        }
+      }
+    }
+    myfileCameraObs << projectIds.size() << endl;
+
+    for (unsigned int i=0; i<projectIds.size(); i++ ) {
+      Vector3d xyz_new_f = last_frame_->T_f_w_ * projectPts[i];
+      xyz_new_f.normalize();
+      myfileCameraObs << projectIds[i] << " " << xyz_new_f[0] << " " <<  xyz_new_f[1] << " " << xyz_new_f[2] << std::endl;
+    }
+  }
+
+
   // finish processing
   finishFrameProcessingCommon(last_frame_->id_, res, last_frame_->nObs());
+
+
 }
 
 FrameHandlerMono::UpdateResult FrameHandlerMono::processFirstFrame()
@@ -200,31 +237,6 @@ FrameHandlerBase::UpdateResult FrameHandlerMono::processFrame()
   new_frame_->setKeyframe();
   SVO_DEBUG_STREAM("New keyframe selected.");
 
-  // for all points in map
-  // compute the direction vector with respect to current frame
-  myfileCameraObs << fixed << new_frame_->timestamp_ << " " ;
-  int nFeatures = 0;
-  vector<int> projectIds;
-  vector<Vector3d> projectPts;
-  static int counter=0;
-  // for all kf
-  for(auto kf : map_.keyframes_)
-  {
-    // for all keypoints
-    for(auto keypoint : kf->fts_)
-    {
-      if(keypoint->point == nullptr)
-        continue;
-
-      if(find(projectIds.begin(), projectIds.end(), keypoint->point->id_) == projectIds.end()) {
-        projectIds.push_back(keypoint->point->id_);
-        projectPts.push_back(keypoint->point->pos_);
-      }
-    }
-  }
-
-  myfileCameraObs << projectIds.size() << endl;
-
   // new keyframe selected
   for(Features::iterator it=new_frame_->fts_.begin(); it!=new_frame_->fts_.end(); ++it)
     if((*it)->point != NULL) {
@@ -263,12 +275,6 @@ FrameHandlerBase::UpdateResult FrameHandlerMono::processFrame()
 
   // add keyframe to map
   map_.addKeyframe(new_frame_);
-
-  for (unsigned int i=0; i<projectIds.size(); i++ ) {
-    Vector3d xyz_new_f = new_frame_->T_f_w_ * projectPts[i];
-    xyz_new_f.normalize();
-    myfileCameraObs << projectIds[i] << " " << xyz_new_f[0] << " " <<  xyz_new_f[1] << " " << xyz_new_f[2] << std::endl;
-  }
 
   return RESULT_IS_KEYFRAME;
 }
